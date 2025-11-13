@@ -99,6 +99,9 @@ class Agent:
 			return False
 		else:
 			return True
+		
+	def getScore(self):
+		return self.__score
 
 	def clear(self):
 		#reset score
@@ -110,32 +113,112 @@ class Agent:
 class Player(Agent):
 	def __init__(self):
 		super().__init__()
+		#init player specific attributes
+		self.__cash = 500
+		self.__bet = 0
+
+	def getCash(self):
+		#return the current player cash pot
+		return self.__cash
+	
+	def getBet(self):
+		#return the current player bet
+		return self.__bet
+	
+	def setBet(self, bet):
+		#remove bet from cash pot
+		self.__cash -= bet
+		#set bet value
+		self.__bet = bet
+
+	def addCash(self, winnings):
+		#add winnings to cash pot
+		self.__cash += winnings
+
+	def clear(self):
+		self.__bet = 0
+		return super().clear()
 
 class Dealer(Agent):
 	def __init__(self):
 		super().__init__()
 
+	def peekCard(self):
+		return self.__cards.index(0)
+
 class Table:
 	def __init__(self):
+		#init table fields
 		self.__cards = Deck()
 		self.__discard = list()
+		self.__dealer = Dealer()
 		self.__state = 0
 
-	def bet(self, player):
-		pass
+	def bet(self, player, bet):
+		#check if bet state
+		if (self.__state == 0):
+			#set player bet
+			player.setBet(bet)
+			
+			#set table into game state
+			self.__state = 1
+
+			#return true for bet placed
+			return True
+		else:
+			#return false for state error
+			return False
 
 	def hit(self, agent):
-		pass
+		#check result of dealt card
+		if (agent.addCard(self.__cards.deal())):
+			#card was dealt with no bust
+			return True
+		else:
+			#return failure
+			return False
 
 	def stand(self, agent):
-		pass
+		#check if in play state
+		if (self.__state == 1):
+			#set state to dealer play
+			self.__state = 2
+			#return success
+			return True
+		elif (self.__state == 2):
+			#set state to comparison state
+			self.__state = 3
+			#return success
+			return True
+		else:
+			#failure as game is not in play
+			return False
 
 	def doubleDown(self, player):
-		pass
-
-	def split(self, player):
-		pass
+		#check result of dealt card
+		if (player.addCard(self.__cards.deal())):
+			if (self.stand(player)):
+				#card was dealt with no bust and player is now standing
+				return True
+			else:
+				#return failure due to state error
+				return False
+		else:
+			#return failure
+			return False
 
 	def surrender(self, player):
-		pass
+		#check if in play state
+		if (self.__state == 1):
+			#set state to betting state
+			self.__state = 0
+
+			#clear current player
+			player.clear()
+
+			#return success
+			return True
+		else:
+			#failure as game is not in play
+			return False
 		
