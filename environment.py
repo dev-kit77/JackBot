@@ -1,5 +1,6 @@
 import random
 from actor import Actor
+from copy import copy
 
 class Environment:
     def __init__(self, min, max, number_of_decks):
@@ -9,7 +10,7 @@ class Environment:
         for i in range(random.randint(min, max)):
             x = self.draw()
         self.dealer = Actor(self.draw())
-        self.player = Actor(10, 10)
+        self.player = Actor(self.draw(), self.draw())
 
     def draw(self):
         ## gets a card from the deck and updates the score and deck
@@ -42,20 +43,17 @@ class Environment:
         print("Player: %i" %self.player.sum)
 
     def probability_of_busting(self):
-        ## make this work with aces
-        ## REWORK THIS TO WORK WITH ANY SCORE, NOT JUST PLAYERS (EASY)
         ## probability of drawing a card that would give a score higher than 21
         ## returns numerator, denominator, quotient
-        events = sum(self.deck[max(0, 22 - self.player.sum - 2):])
+        events = sum(self.deck[max(-1, 22 - self.player.sum - 2):-1])
         total = sum(self.deck)
         return events, total, events / total
 
     def probability_of_not_busting(self):
         ## probability of drawing a card that would give a score lower than 21
         ## returns numerator, denominator, quotient
-        events = sum(self.deck[:max(0, 22 - self.player.sum - 2)])
-        total = sum(self.deck)
-        return events, total, events / total
+        result = self.probability_of_busting()
+        return result[1] - result[0], result[1], 1 - result[2]
     
     def remaining_cards(self):
         return sum(self.deck)
@@ -82,7 +80,7 @@ class Environment:
         return (busts, count, busts / count)
 
     def stand(self):
-        ## REWORK TO RESOLVE DRAWS CORRECTLY
+        ## REWORK TO RESOLVE DRAWS CORRECTLY (EASY)
         self.dealer.add_card(self.draw())
         while self.dealer.sum < 17:
             self.dealer.add_card(self.draw())
@@ -101,21 +99,20 @@ class Environment:
         else:
             print("%i vs. %i, dealer wins!" %(self.player.sum, self.dealer.sum))
             return 0
-    
+        
     def try_stand(self):
-        ## REWORK
         # tries to stand without affecting any fields
-        # awful lot slower than try_hit unfortunately since the dealer may need to draw multiple cards
-        # and they all need to be returned to the deck
-        dealersum = self.dealer.sum
+        # awful lot slower and more memory intensive than try_hit
+        # since we need to store the cards drawn and a copy of the dealer
+        temp_dealer = copy(self.dealer)
         drawn = []
-        while dealersum < 17:
-            draw = self.draw()
-            dealersum += draw
-            drawn.append(draw)
+        while (temp_dealer.sum < 17):
+            x = self.draw()
+            temp_dealer.add_card(x)
+            drawn.append(x)
         [self.undraw(x) for x in drawn]
-        return 1 if (not self.player.sum and (self.player.sum > dealersum or dealersum > 21)) else 0
-    
+        return 1 if (not self.player.has_bust() and (self.player.sum > temp_dealer.sum or temp_dealer.has_bust())) else 0
+
     def try_stand_count(self, count):
         successes = 0
         for i in range(count):
