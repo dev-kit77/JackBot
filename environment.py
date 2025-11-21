@@ -80,25 +80,29 @@ class Environment:
         return (busts, count, busts / count)
 
     def stand(self):
-        ## REWORK TO RESOLVE DRAWS CORRECTLY (EASY)
+        ## returns -1 on loss, 0 on draw, 1 on win
         self.dealer.add_card(self.draw())
         while self.dealer.sum < 17:
             self.dealer.add_card(self.draw())
-        return 1 if (not self.player.has_bust() and (self.player.sum > self.dealer.sum or self.dealer.has_bust())) else 0
+        if (not self.player.has_bust() and self.player.sum == self.dealer.sum): return 0 # draw
+        elif (not self.player.has_bust() and (self.player.sum > self.dealer.sum or self.dealer.has_bust())): return 1 # win
+        else: return -1 # loss
         
     def stand_verbose(self):
-        self.dealer.add_card(self.draw())
         print("Dealer draws: %i" %self.dealer.sum, end="")
         while self.dealer.sum < 17:
             self.dealer.add_card(self.draw())
             print(" -> %i" %self.dealer.sum, end="")
         print("")
+        if (not self.player.has_bust() and self.player.sum == self.dealer.sum):
+            print("%i vs. %i, draw!" %(self.player.sum, self.dealer.sum))
+            return 0
         if (not self.player.has_bust() and (self.player.sum > self.dealer.sum or self.dealer.has_bust())):
             print("%i vs. %i, player wins!" %(self.player.sum, self.dealer.sum))
             return 1
         else:
             print("%i vs. %i, dealer wins!" %(self.player.sum, self.dealer.sum))
-            return 0
+            return -1
         
     def try_stand(self):
         # tries to stand without affecting any fields
@@ -111,12 +115,14 @@ class Environment:
             temp_dealer.add_card(x)
             drawn.append(x)
         [self.undraw(x) for x in drawn]
-        return 1 if (not self.player.has_bust() and (self.player.sum > temp_dealer.sum or temp_dealer.has_bust())) else 0
+        if (not self.player.has_bust() and self.player.sum == self.dealer.sum): return 0 # draw
+        elif (not self.player.has_bust() and (self.player.sum > self.dealer.sum or self.dealer.has_bust())): return 1 # win
+        else: return -1 # loss
 
     def try_stand_count(self, count):
         successes = 0
         for i in range(count):
-            successes += self.try_stand()
+            successes += 1 if self.try_stand() == 1 else 0
         return (successes, count, successes / count)
 
     def observe(self):
