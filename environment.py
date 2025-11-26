@@ -4,17 +4,25 @@ from copy import copy
 
 class Environment:
     def __init__(self, min, max, number_of_decks):
-        self.deck = [x * number_of_decks for x in (4, 4, 4, 4, 4, 4, 4, 4, 16, 4)]
-        self.score = 0 # the card counting "score" of the deck
+        self.number_of_decks = number_of_decks
+        self.create_deck()
         # removes a random number of cards from min to max
         for i in range(random.randint(min, max)):
             x = self.draw()
         self.dealer = Actor(self.draw())
         self.player = Actor(self.draw(), self.draw())
-
+    
+    def create_deck(self):
+        self.deck = [x * self.number_of_decks for x in (4, 4, 4, 4, 4, 4, 4, 4, 16, 4)]
+        self.score = 0 # the card counting "score" of the deck
+        
     def draw(self):
         ## gets a card from the deck and updates the score and deck
-        x = random.sample(range(10), counts=self.deck, k=1)[0]
+        try:
+            x = random.sample(range(10), counts=self.deck, k=1)[0]
+        except:
+            self.create_deck()
+            x = random.sample(range(10), counts=self.deck, k=1)[0]
         self.deck[x] -= 1
         if x > 7:
             self.score -= 1
@@ -128,7 +136,7 @@ class Environment:
 
     def observe(self):
         # returns the state to be given to an agent
-        return (self.player.sum, self.player.aces, self.dealer.sum)
+        return (self.player.sum, self.player.aces, self.dealer.sum, self.score)
     
     def player_has_bust(self):
         return self.player.has_bust()
