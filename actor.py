@@ -10,7 +10,7 @@ class Actor:
         while (self.sum > 21 and self.aces > 0):
             self.aces -= 1
             self.sum -= 10
-        return 1 if self.sum <= 21 else 0
+        return 1 if self.sum <= 21 else -1
     
     def try_add_card(self, card):
         ## returns the result of adding the card to the sum without updating variables

@@ -59,7 +59,7 @@ class Environment:
         return sum(self.deck)
     
     def hit(self):
-        return self.player.add_card(self.draw)
+        return self.player.add_card(self.draw())
 
     def hit_verbose(self):
         print("Player hits: %i -> " %self.player.sum, end="")
@@ -70,13 +70,14 @@ class Environment:
     def try_hit(self):
         # hits without updates variables
         x = self.peek()
-        return 1 if self.player.try_add_card(x) > 21 else 0
+        return 1 if self.player.try_add_card(x) > 21 else -1
     
     def try_hit_count(self, count):
         # try_hit's multiple times and prints success rate
         busts = 0
         for i in range(count):
-            busts += self.try_hit()
+            x = self.try_hit()
+            busts += 1 if (x == 1) else 0
         return (busts, count, busts / count)
 
     def stand(self):
@@ -127,4 +128,28 @@ class Environment:
 
     def observe(self):
         # returns the state to be given to an agent
-        return (self.player.sum, self.player.aces, self.dealer.sum, self.dealer.aces, self.score)
+        return (self.player.sum, self.player.aces, self.dealer.sum)
+    
+    def player_has_bust(self):
+        return self.player.has_bust()
+    
+    def choose_action(self, probability):
+        # returns 0 if game is ongoing, 1 if game has stopped (standed)
+        # maybe its fine since hitting then not busting and standing then not losing are both good
+        # same with busting and standing then losing
+        if random.random() <= probability:
+            self.hit()
+            return 0
+        else:
+            self.stand()
+            return 1
+    
+    def step(self, action):
+        result = 0
+        terminated = False
+        if action:
+            result = self.hit()
+        else:
+            result = self.stand()
+            terminated = True
+        return self.observe, result, terminated
