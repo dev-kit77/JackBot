@@ -94,7 +94,7 @@ class Environment:
     def stand(self):
         ## returns -1 on loss, 0 on draw, 1 on win
         self.dealer.add_card(self.draw())
-        while self.dealer.sum < 17:
+        while (self.dealer.aces > 0 and self.dealer.sum == 17) or self.dealer.sum < 17:
             self.dealer.add_card(self.draw())
         if (not self.player.has_bust() and self.player.sum == self.dealer.sum): return 0 # draw
         elif (not self.player.has_bust() and (self.player.sum > self.dealer.sum or self.dealer.has_bust())): return 1 # win
@@ -102,7 +102,7 @@ class Environment:
         
     def stand_verbose(self):
         print("Dealer draws: %i" %self.dealer.sum, end="")
-        while self.dealer.sum < 17:
+        while (self.dealer.aces > 0 and self.dealer.sum == 17) or self.dealer.sum < 17:
             self.dealer.add_card(self.draw())
             print(" -> %i" %self.dealer.sum, end="")
         print("")
@@ -122,7 +122,7 @@ class Environment:
         # since we need to store the cards drawn and a copy of the dealer
         temp_dealer = copy(self.dealer)
         drawn = []
-        while (temp_dealer.sum < 17):
+        while (temp_dealer > 0 and temp_dealer == 17) or temp_dealer < 17:
             x = self.draw()
             temp_dealer.add_card(x)
             drawn.append(x)
@@ -139,7 +139,7 @@ class Environment:
 
     def observe(self):
         # returns the state to be given to an agent
-        return (self.player.sum, self.player.aces, self.dealer.sum, self.score)
+        return (self.player.sum, self.player.aces, self.dealer.sum)
     
     def player_has_bust(self):
         return self.player.has_bust()
@@ -159,11 +159,11 @@ class Environment:
         result = 0
         terminated = False
         if action:
-            result = self.hit()
+            reward = self.hit()
         else:
-            result = self.stand()
+            reward = self.stand()
             terminated = True
-        return self.observe, result, terminated
+        return self.observe, reward, terminated
     
     def step_verbose(self, action):
         result = 0
