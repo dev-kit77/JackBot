@@ -50,8 +50,36 @@ class Agent():
     def get_eval(self, obs):
         return self.q_values[obs]
 
+    def print_strategy_table(self):
+        ## iterate through all states
+
+        ACTIONS = "SH"
+
+        print("\n\n")
+        print("Hard totals:\n  ", end="")
+        [print(" %2i " %x, end="") for x in range(2, 12)]
+        print("")
+        for player in range(21, 3, -1):
+            print("%2i" %player, end=" ")
+            for dealer in range(2, 12):
+                e = self.q_values[(player, 0, dealer)]
+                print(" %s " %(ACTIONS[int(np.argmax(e))] if not np.array_equal(e, np.zeros(2)) else "X"), end=" ")
+            print("")
+        
+        print("")
+        print("Soft totals:\n    ", end="")
+        [print(" %2i " %x, end="") for x in range(2, 12)]
+        print("")
+        for player in range(10, 0, -1):
+            print("%2i,A" %player, end=" ")
+            for dealer in range(2, 12):
+                e = self.q_values[(11 + player, 1, dealer)]
+                print(" %s " %(ACTIONS[int(np.argmax(e))] if not np.array_equal(e, np.zeros(2)) else "X"), end=" ")
+            print("")
+
+
 LEARNING_RATE = 0.01
-N_EPISODES = 10_000_000
+N_EPISODES = 1_000_000
 CHECK_IN = 10
 START_EPSILON = 1.0
 EPSILON_DECAY = START_EPSILON / (N_EPISODES / 2)
@@ -121,5 +149,4 @@ def test_verbose():
             obs = next_obs
 
 train()
-test_verbose()
-        
+agent.print_strategy_table()
