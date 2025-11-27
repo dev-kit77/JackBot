@@ -46,9 +46,12 @@ class Agent():
     def get_best_action(self, obs):
         # no exploration (probably bad)
         return int(np.argmax(self.q_values[obs]))
+    
+    def get_eval(self, obs):
+        return self.q_values[obs]
 
 LEARNING_RATE = 0.01
-N_EPISODES = 1_000_000
+N_EPISODES = 10_000_000
 CHECK_IN = 10
 START_EPSILON = 1.0
 EPSILON_DECAY = START_EPSILON / (N_EPISODES / 2)
@@ -56,45 +59,67 @@ FINAL_EPSILON = 0.1
 DISCOUNT_FACTOR = 0.95
 
 agent = Agent(LEARNING_RATE, DISCOUNT_FACTOR, START_EPSILON, EPSILON_DECAY, FINAL_EPSILON)
-wins = 0
-checkpoint = int(N_EPISODES / CHECK_IN)
 
-for episode in range(N_EPISODES):
-    env = Environment(0, 0, 8)
-    obs = env.observe()
-    terminated = False
+def train():
+    wins = 0
+    checkpoint = int(N_EPISODES / CHECK_IN)
 
-    if not (episode % checkpoint):
-        print("%i: %i / %i = %f" %(episode, wins, checkpoint, wins / checkpoint))
-        wins = 0
+    for episode in range(N_EPISODES):
+        env = Environment(0, 0, 8)
+        obs = env.observe()
+        terminated = False
 
-    while not terminated:
-        action = agent.get_action(obs)
+        if not (episode % checkpoint):
+            print("%i: %i / %i = %f" %(episode, wins, checkpoint, wins / checkpoint))
+            wins = 0
 
-        next_obs, result, terminated = env.step(action)
+        while not terminated:
+            action = agent.get_action(obs)
 
-        agent.update(obs, action, result, terminated, next_obs)
+            next_obs, result, terminated = env.step(action)
 
-        obs = next_obs
-    
-    wins += 1 if result == 1 else 0
-    
-    agent.decay_epsilon()
+            agent.update(obs, action, result, terminated, next_obs)
+
+            obs = next_obs
+        
+        wins += 1 if result == 1 else 0
+        
+        agent.decay_epsilon()
 
 
-N_TESTS = 20_000
-wins = 0
+def test():
+    N_TESTS = 20_000
+    wins = 0
 
-for i in range(N_TESTS):
-    env = Environment(0, 0, 8)
-    obs = env.observe()
-    terminated = False
+    for i in range(N_TESTS):
+        env = Environment(0, 0, 8)
+        obs = env.observe()
+        terminated = False
 
-    while not terminated:
-        action = agent.get_best_action(obs)
-        next_obs, result, terminated = env.step(action)
-        obs = next_obs
-    
-    wins += 1 if result == 1 else 0
+        while not terminated:
+            action = agent.get_best_action(obs)
+            next_obs, result, terminated = env.step(action)
+            obs = next_obs
+        
+        wins += 1 if result == 1 else 0
 
-print("TEST: %i / %i = %f" %(wins, N_TESTS, wins / N_TESTS))
+    print("TEST: %i / %i = %f" %(wins, N_TESTS, wins / N_TESTS))
+
+def test_verbose():
+
+    while True:
+        env = Environment(0, 0, 8)
+        obs = env.observe()
+        terminated = False
+
+        while not terminated:
+            env.print(0b011)
+            print(agent.get_eval(obs))
+            action = agent.get_action(obs)
+            next_obs, result, terminated = env.step_verbose(action)
+            input()
+            obs = next_obs
+
+train()
+test_verbose()
+        
