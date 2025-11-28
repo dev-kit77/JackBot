@@ -163,7 +163,7 @@ class Environment:
         else:
             reward = self.stand()
             terminated = True
-        return self.observe, reward, terminated
+        return self.observe(), reward, terminated
     
     def step_verbose(self, action):
         result = 0
@@ -173,4 +173,4 @@ class Environment:
         else:
             result = self.stand_verbose()
             terminated = True
-        return self.observe, result, terminated
+        return self.observe(), result, terminated
