@@ -4,6 +4,7 @@ import numpy as np
 from collections import defaultdict
 import random
 from environment import Environment
+import agent_graphs
 
 # q learning
 
@@ -30,9 +31,9 @@ class Agent():
             return int(np.argmax(self.q_values[obs]))
     
     def update(self, obs, action, reward, terminated, next_obs):
-        best_reward = (not terminated) * np.max(self.q_values[next_obs])
+        #best_reward = (not terminated) * np.max(self.q_values[next_obs])
 
-        target = reward + self.discount_factor * best_reward
+        target = reward #+ self.discount_factor * best_reward
 
         error = target - self.q_values[obs][action]
 
@@ -76,10 +77,26 @@ class Agent():
                 e = self.q_values[(11 + player, 1, dealer)]
                 print(" %s " %(ACTIONS[int(np.argmax(e))] if not np.array_equal(e, np.zeros(2)) else "X"), end=" ")
             print("")
+    
+    def reward_function(self, obs, next_obs):
+        if next_obs[0] > 21:
+            # agent busted (bad)
+            reward = 0
+        elif next_obs[2] <= 21 and next_obs[2] > 16 and next_obs[2] > next_obs[0]:
+            # agent stood and lost to the dealer (sort of bad)
+            reward = next_obs[0] / 2
+        elif obs[0] > next_obs[0]:
+            # hit and your score went down
+            reward = next_obs[0] - (obs[0] - next_obs[0])
+        else:
+            # agent won (good)
+            reward = next_obs[0]
+        return reward
 
 
-LEARNING_RATE = 0.01
-N_EPISODES = 1_000_000
+
+LEARNING_RATE = 0.02
+N_EPISODES = 5_000_000
 CHECK_IN = 10
 START_EPSILON = 1.0
 EPSILON_DECAY = START_EPSILON / (N_EPISODES / 2)
@@ -87,30 +104,33 @@ FINAL_EPSILON = 0.1
 DISCOUNT_FACTOR = 0.95
 
 agent = Agent(LEARNING_RATE, DISCOUNT_FACTOR, START_EPSILON, EPSILON_DECAY, FINAL_EPSILON)
+win_count = []
+checkpoint = int(N_EPISODES / CHECK_IN)
 
 def train():
     wins = 0
-    checkpoint = int(N_EPISODES / CHECK_IN)
 
     for episode in range(N_EPISODES):
-        env = Environment(0, 0, 8)
+        env = Environment(0, 0, 1)
         obs = env.observe()
         terminated = False
 
         if not (episode % checkpoint):
             print("%i: %i / %i = %f" %(episode, wins, checkpoint, wins / checkpoint))
+            win_count.append(wins)
             wins = 0
 
         while not terminated:
             action = agent.get_action(obs)
 
-            next_obs, result, terminated = env.step(action)
+            next_obs, terminated = env.step(action)
+            reward = agent.reward_function(obs, next_obs)
 
-            agent.update(obs, action, result, terminated, next_obs)
+            agent.update(obs, action, reward, terminated, next_obs)
 
             obs = next_obs
         
-        wins += 1 if result == 1 else 0
+        wins += 1 if env.player_has_won() else 0
         
         agent.decay_epsilon()
 
@@ -126,10 +146,11 @@ def test():
 
         while not terminated:
             action = agent.get_best_action(obs)
-            next_obs, result, terminated = env.step(action)
-            obs = next_obs
+            next_obs, terminated = env.step(action)
+            reward = agent.reward_function(obs, next_obs)
+            agent.update(obs, action, reward, terminated, next_obs)
         
-        wins += 1 if result == 1 else 0
+        wins += 1 if env.player_has_won() == 1 else 0
 
     print("TEST: %i / %i = %f" %(wins, N_TESTS, wins / N_TESTS))
 
@@ -143,10 +164,15 @@ def test_verbose():
         while not terminated:
             env.print(0b011)
             print(agent.get_eval(obs))
-            action = agent.get_action(obs)
-            next_obs, result, terminated = env.step_verbose(action)
+            action = agent.get_best_action(obs)
+            next_obs, terminated = env.step_verbose(action)
+            reward = agent.reward_function(obs, next_obs)
+            print("Reward: %f" %reward)
             input()
             obs = next_obs
 
 train()
 agent.print_strategy_table()
+agent_graphs.plot_error(agent)
+agent_graphs.plot_wins(win_count, checkpoint)
+test_verbose()

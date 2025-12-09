@@ -51,7 +51,7 @@ class Environment:
         if (output & 0b010):
             print("Dealer: %i" %self.dealer.sum)
         if (output & 0b001):
-            print("Player: %i" %self.player.sum)
+            print("Player: %i; Ace? %s" %(self.player.sum, "Yes" if self.player.aces else "No"))
 
     def probability_of_busting(self):
         ## probability of drawing a card that would give a score higher than 21
@@ -74,9 +74,9 @@ class Environment:
 
     def hit_verbose(self):
         print("Player hits: %i -> " %self.player.sum, end="")
-        self.player.add_card(self.draw())
+        result = self.player.add_card(self.draw())
         print(self.player.sum)
-        return self.player.has_bust()
+        return result
     
     def try_hit(self):
         # hits without updates variables
@@ -139,7 +139,7 @@ class Environment:
 
     def observe(self):
         # returns the state to be given to an agent
-        return (self.player.sum, self.player.aces, self.dealer.sum)
+        return (self.player.sum, self.player.aces, self.dealer.sum, self.score)
     
     def player_has_bust(self):
         return self.player.has_bust()
@@ -156,21 +156,24 @@ class Environment:
             return 1
     
     def step(self, action):
-        result = 0
         terminated = False
         if action:
-            reward = self.hit()
+            if self.hit() == -1:
+                terminated = True
         else:
-            reward = self.stand()
+            self.stand()
             terminated = True
-        return self.observe(), reward, terminated
+        return self.observe(), terminated
     
     def step_verbose(self, action):
-        result = 0
         terminated = False
         if action:
-            result = self.hit_verbose()
+            if self.hit_verbose() == -1:
+                terminated = True
         else:
-            result = self.stand_verbose()
+            self.stand_verbose()
             terminated = True
-        return self.observe(), result, terminated
+        return self.observe(), terminated
+
+    def player_has_won(self):
+        return 1 if (not self.player.has_bust() and (self.player.sum > self.dealer.sum or self.dealer.has_bust())) else 0
