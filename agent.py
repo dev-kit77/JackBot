@@ -9,10 +9,9 @@ import agent_graphs
 # q learning
 
 class Agent():
-    def __init__(self, learning_rate, discount_factor, inital_epsilon, epsilon_decay, final_epsilon):
+    def __init__(self, learning_rate, inital_epsilon, epsilon_decay, final_epsilon):
         self.q_values = defaultdict(lambda: np.zeros(2))
         self.learning_rate = learning_rate
-        self.discount_factor = discount_factor
 
         self.epsilon = inital_epsilon
         self.epsilon_decay = epsilon_decay
@@ -23,7 +22,7 @@ class Agent():
         self.total_states = 0
 
     def get_action(self, obs):
-        # hitting epsilon = random action to explor
+        # hitting epsilon = random action to explore
         # missing epsilon = choose best action
         # epsilon decays over time (less exploration)
         self.total_states += 1
@@ -34,14 +33,11 @@ class Agent():
         else:
             return int(np.argmax(self.q_values[obs]))
     
-    def update(self, obs, action, reward, terminated, next_obs):
-        #best_reward = (not terminated) * np.max(self.q_values[next_obs])
-
-        target = reward #+ self.discount_factor * best_reward
-
-        error = target - self.q_values[obs][action]
-
-        self.q_values[obs][action] = self.q_values[obs][action] + self.learning_rate * error
+    def update(self, obs, action, reward):
+        # difference in expected reward vs. observed reward
+        error = reward - self.q_values[obs][action] 
+        # update expected reward
+        self.q_values[obs][action] = self.q_values[obs][action] + self.learning_rate * error 
 
         self.training_error.append(error)
     
@@ -49,14 +45,16 @@ class Agent():
         self.epsilon = max(self.final_epsilon, self.epsilon - self.epsilon_decay)
     
     def get_best_action(self, obs):
-        # no exploration (probably bad)
+        # no exploration for testing
         return int(np.argmax(self.q_values[obs]))
     
     def get_eval(self, obs):
+        # return the agents expected reward for each action
         return self.q_values[obs]
 
     def print_strategy_table(self):
         ## iterate through all states
+        ## find the best action
 
         ACTIONS = "SH"
 
@@ -85,6 +83,7 @@ class Agent():
     def reward_function(self, obs, next_obs):
         if next_obs[0] > 21:
             # agent busted (bad)
+            #reward = obs[0] - (next_obs[0] - 21) attempt to make the agent a little less scared of busting
             reward = 0
         elif next_obs[2] <= 21 and next_obs[2] > 16 and next_obs[2] > next_obs[0]:
             # agent stood and lost to the dealer (sort of bad)
@@ -105,9 +104,8 @@ CHECK_IN = 10
 START_EPSILON = 1.0
 EPSILON_DECAY = START_EPSILON / (N_EPISODES / 4)
 FINAL_EPSILON = 0.1
-DISCOUNT_FACTOR = 0.95
 
-agent = Agent(LEARNING_RATE, DISCOUNT_FACTOR, START_EPSILON, EPSILON_DECAY, FINAL_EPSILON)
+agent = Agent(LEARNING_RATE, START_EPSILON, EPSILON_DECAY, FINAL_EPSILON)
 win_count = []
 checkpoint = int(N_EPISODES / CHECK_IN)
 
@@ -134,7 +132,7 @@ def train():
             next_obs, terminated = env.step(action)
             reward = agent.reward_function(obs, next_obs)
 
-            agent.update(obs, action, reward, terminated, next_obs)
+            agent.update(obs, action, reward)
 
             obs = next_obs
         
