@@ -15,6 +15,9 @@ class Environment:
     def create_deck(self):
         self.deck = [x * self.number_of_decks for x in (4, 4, 4, 4, 4, 4, 4, 4, 16, 4)]
         self.score = 0 # the card counting "score" of the deck
+        self.below_five = 0
+        self.below_eight = 0
+        self.below_ace = 0
         
     def draw(self):
         ## gets a card from the deck and updates the score and deck
@@ -24,10 +27,16 @@ class Environment:
             self.create_deck()
             x = random.sample(range(10), counts=self.deck, k=1)[0]
         self.deck[x] -= 1
-        if x > 7:
-            self.score -= 1
-        elif x < 5:
-            self.score += 1
+        #if x > 7:
+        #    self.score -= 1
+        #elif x < 5:
+        #    self.score += 1
+        if x < 3:
+            self.below_five += 1
+        elif x < 6:
+            self.below_eight += 1
+        else:
+            self.below_ace += 1
         return x + 2
     
     def peek(self):
@@ -139,7 +148,7 @@ class Environment:
 
     def observe(self):
         # returns the state to be given to an agent
-        return (self.player.sum, self.player.aces, self.dealer.sum, self.score)
+        return (self.player.sum, self.player.aces, self.dealer.sum, self.below_five, self.below_eight, self.below_ace)
     
     def player_has_bust(self):
         return self.player.has_bust()
@@ -177,3 +186,6 @@ class Environment:
 
     def player_has_won(self):
         return 1 if (not self.player.has_bust() and (self.player.sum > self.dealer.sum or self.dealer.has_bust())) else 0
+    
+    def player_drew(self):
+        return 1 if self.player.sum == self.dealer.sum and self.player.sum < 22 and self.dealer.sum > 16 else 0
