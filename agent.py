@@ -107,6 +107,7 @@ FINAL_EPSILON = 0.1
 
 agent = Agent(LEARNING_RATE, START_EPSILON, EPSILON_DECAY, FINAL_EPSILON)
 win_count = []
+states = []
 checkpoint = int(N_EPISODES / CHECK_IN)
 
 def train():
@@ -122,6 +123,7 @@ def train():
         if not (episode % checkpoint) and episode > 0:
             print("%i: %i / %i = %f; %i / %i = %f" %(episode, wins, checkpoint, wins / checkpoint, agent.new_states - nstates, agent.total_states - tstates, ((agent.new_states - nstates) / (agent.total_states - tstates))))
             win_count.append(wins)
+            states.append((agent.new_states - nstates, agent.total_states - tstates))
             wins = 0
             nstates = agent.new_states
             tstates = agent.total_states
@@ -180,4 +182,5 @@ train()
 agent.print_strategy_table()
 agent_graphs.plot_error(agent)
 agent_graphs.plot_wins(win_count, checkpoint)
+agent_graphs.plot_new_states(states, checkpoint)
 test()

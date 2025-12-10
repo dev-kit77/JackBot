@@ -22,3 +22,12 @@ def plot_wins(win_count, checkpoint):
     plt.xlabel("episode")
     plt.ylabel("win rate")
     plt.show()
+
+def plot_new_states(state_list, checkpoint):
+    y = [(i[0] / i[1]) * 100 for i in state_list]
+    x = [i * checkpoint for i in range(0, len(state_list))]
+    fig, ax = plt.subplots()
+    ax.plot(x, y, linewidth=2.0)
+    plt.xlabel("episode")
+    plt.ylabel("%% of new states visited")
+    plt.show()
