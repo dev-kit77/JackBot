@@ -19,12 +19,16 @@ class Agent():
         self.final_epsilon = final_epsilon
 
         self.training_error = []
+        self.new_states = 0
+        self.total_states = 0
 
     def get_action(self, obs):
         # hitting epsilon = random action to explor
         # missing epsilon = choose best action
         # epsilon decays over time (less exploration)
-        #if True:
+        self.total_states += 1
+        if (np.array_equal(self.q_values[obs], np.zeros(2))): # new state
+            self.new_states += 1
         if random.random() < self.epsilon:
             return round(random.random())
         else:
@@ -96,10 +100,10 @@ class Agent():
 
 
 LEARNING_RATE = 0.02
-N_EPISODES = 5_000_000
+N_EPISODES = 1_000_000
 CHECK_IN = 10
 START_EPSILON = 1.0
-EPSILON_DECAY = START_EPSILON / (N_EPISODES / 2)
+EPSILON_DECAY = START_EPSILON / (N_EPISODES / 4)
 FINAL_EPSILON = 0.1
 DISCOUNT_FACTOR = 0.95
 
@@ -109,16 +113,20 @@ checkpoint = int(N_EPISODES / CHECK_IN)
 
 def train():
     wins = 0
+    nstates = 0
+    tstates = 0
 
     for episode in range(N_EPISODES):
         env = Environment(0, 0, 1)
         obs = env.observe()
         terminated = False
 
-        if not (episode % checkpoint):
-            print("%i: %i / %i = %f" %(episode, wins, checkpoint, wins / checkpoint))
+        if not (episode % checkpoint) and episode > 0:
+            print("%i: %i / %i = %f; %i / %i = %f" %(episode, wins, checkpoint, wins / checkpoint, agent.new_states - nstates, agent.total_states - tstates, ((agent.new_states - nstates) / (agent.total_states - tstates))))
             win_count.append(wins)
             wins = 0
+            nstates = agent.new_states
+            tstates = agent.total_states
 
         while not terminated:
             action = agent.get_action(obs)
@@ -136,28 +144,27 @@ def train():
 
 
 def test():
-    N_TESTS = 20_000
+    N_TESTS = 100_000
     wins = 0
 
     for i in range(N_TESTS):
-        env = Environment(0, 0, 8)
+        env = Environment(0, 0, 1)
         obs = env.observe()
         terminated = False
 
         while not terminated:
             action = agent.get_best_action(obs)
             next_obs, terminated = env.step(action)
-            reward = agent.reward_function(obs, next_obs)
-            agent.update(obs, action, reward, terminated, next_obs)
+            obs = next_obs
         
-        wins += 1 if env.player_has_won() == 1 else 0
+        wins += 1 if env.player_has_won() else 0
 
     print("TEST: %i / %i = %f" %(wins, N_TESTS, wins / N_TESTS))
 
 def test_verbose():
 
     while True:
-        env = Environment(0, 0, 8)
+        env = Environment(0, 0, 1)
         obs = env.observe()
         terminated = False
 
@@ -175,4 +182,4 @@ train()
 agent.print_strategy_table()
 agent_graphs.plot_error(agent)
 agent_graphs.plot_wins(win_count, checkpoint)
-test_verbose()
+test()
