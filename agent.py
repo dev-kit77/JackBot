@@ -100,7 +100,7 @@ class Agent():
 
 
 LEARNING_RATE = 0.02
-N_EPISODES = 1_000_000
+N_EPISODES = 5_000_000
 CHECK_IN = 10
 START_EPSILON = 1.0
 EPSILON_DECAY = START_EPSILON / (N_EPISODES / 4)
@@ -138,7 +138,7 @@ def train():
 
             obs = next_obs
         
-        wins += 1 if env.player_has_won() else 0
+        wins += 1 if env.player_has_won() or env.player_drew() else 0
         
         agent.decay_epsilon()
 
@@ -157,7 +157,7 @@ def test():
             next_obs, terminated = env.step(action)
             obs = next_obs
         
-        wins += 1 if env.player_has_won() else 0
+        wins += 1 if env.player_has_won() or env.player_drew() else 0
 
     print("TEST: %i / %i = %f" %(wins, N_TESTS, wins / N_TESTS))
 
