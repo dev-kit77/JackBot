@@ -196,7 +196,7 @@ def tester():
         (20, 0, 10, 0, "my 20 vs dealer 10 ,I should stand"),
     ]
 
-    #again, do not change exploration weight but feel free to change lookahead depth
+    #first tester so that we can find the outcomes on specific hands
     mcts = MCTS(exploration_weight=1.41, lookahead_depth=10)
 
     for player_sum, player_aces, dealer_sum, dealer_aces, description in scenarios:
@@ -207,11 +207,52 @@ def tester():
         env.dealer.aces = dealer_aces
 
         #can adjust number of runs the search makes here
-        action = mcts.search(env, num_simulations=100000)
+        action = mcts.search(env, num_simulations=10000)
         bust_prob = env.probability_of_busting()[2]
 
         print(f"\n{description}")
         print(f"  Bust probability: {bust_prob:.1%}")
         print(f"  MCTS decision: {action.upper()}")
 
+    #wide, random tester to get overall winrate
+    num_games = 10000
+    wins = 0
+    losses = 0
+    draws = 0
+    
+    print(f"\nTesting over {num_games} random hands\n")
+    
+    for i in range(num_games):
+        env = Environment(10, 20, 6)  
+        while True:
+            action = mcts.search(env, num_simulations=500)
+            
+            if action == 'hit':
+                card = env.draw()
+                bust = env.player.add_card(card)
+                if bust == 0:
+                    losses += 1
+                    break
+            else:
+                result = env.stand()
+                if result == 1:
+                    wins += 1
+                elif result == 0:
+                    draws += 1
+                else:
+                    losses += 1
+                break
+        
+        #Give a little update every 1000 runs
+        if (i + 1) % 1000 == 0:
+            print(f"Completed {i + 1}/{num_games} games")
+    
+    total_decisive = wins + losses
+    win_rate = wins / total_decisive if total_decisive > 0 else 0
+    
+    print(f"\n Results over {num_games} hands:")
+    print(f" Wins:   {wins} ({wins/num_games*100:.1f}%)")
+    print(f" Losses: {losses} ({losses/num_games*100:.1f}%)")
+    print(f" Draws:  {draws} ({draws/num_games*100:.1f}%)")
+    print(f"\n Win rate: {win_rate*100:.1f}%")
 tester()
