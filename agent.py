@@ -151,7 +151,7 @@ def train():
     tstates = 0
 
     for episode in range(N_EPISODES):
-        env = Environment(0, 0, 1)
+        env = Environment(1)
         obs = env.observe()
         terminated = False
 
@@ -184,7 +184,7 @@ def test():
     losses = 0
 
     for i in range(N_TESTS):
-        env = Environment(0, 0, 1)
+        env = Environment(1)
         obs = env.observe()
         terminated = False
 
@@ -204,7 +204,7 @@ def random_test():
     losses = 0
 
     for i in range(N_TESTS):
-        env = Environment(0, 0, 1)
+        env = Environment(1)
         obs = env.observe()
         terminated = False
 
@@ -221,7 +221,7 @@ def random_test():
 def test_verbose():
 
     while True:
-        env = Environment(0, 0, 1)
+        env = Environment(1)
         obs = env.observe()
         terminated = False
 

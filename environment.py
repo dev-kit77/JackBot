@@ -170,7 +170,7 @@ class Environment:
 
     def observe(self):
         # returns the state to be given to an agent
-        return (self.player.sum, self.player.aces, self.dealer.sum, self.below_five, self.below_eight, self.below_ace)
+        return (self.player.sum, self.player.aces, self.dealer.sum, self.score)
     
     def player_has_bust(self):
         return self.player.has_bust()
