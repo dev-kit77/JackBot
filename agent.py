@@ -1,16 +1,45 @@
 # built following https://gymnasium.farama.org/introduction/train_agent/
 
-import numpy as np
-from collections import defaultdict
+import os
 import random
-from environment import Environment
+import zlib
+from collections import defaultdict
+from datetime import datetime
+from time import time
+
+import dill
+import numpy as np
+
 import agent_graphs
+<<<<<<< HEAD
 from math import inf
+=======
+from environment import Environment
+>>>>>>> a96e96c (Added saving and loading agents to the agents file)
 
 # q learning
+LEARNING_RATE = 0.02
+N_EPISODES = 5_000_000
+CHECK_IN = 10
+START_EPSILON = 1.0
+EPSILON_DECAY = START_EPSILON / (N_EPISODES / 2)
+FINAL_EPSILON = 0.1
+N_TESTS = 100_000
+NO_DECKS = 8
 
+<<<<<<< HEAD
 class Agent():
     def __init__(self, learning_rate, inital_epsilon, epsilon_decay, final_epsilon):
+=======
+
+class Agent:
+    def __init__(
+        self,
+        learning_rate=LEARNING_RATE,
+        inital_epsilon=START_EPSILON,
+        epsilon_decay=EPSILON_DECAY,
+        final_epsilon=FINAL_EPSILON,
+    ):
         self.q_values = defaultdict(lambda: np.zeros(2))
         self.learning_rate = learning_rate
 
@@ -21,6 +50,18 @@ class Agent():
         self.training_error = []
         self.new_states = 0
         self.total_states = 0
+
+    def fill(self, clone):
+        self.q_values = clone.q_values
+        self.learning_rate = clone.learning_rate
+
+        self.epsilon = clone.epsilon
+        self.epsilon_decay = clone.epsilon_decay
+        self.final_epsilon = clone.final_epsilon
+
+        self.training_error = clone.training_error
+        self.new_states = clone.new_states
+        self.total_states = clone.total_states
 
     def get_action(self, obs):
         # hitting epsilon = random action to explore
@@ -131,15 +172,65 @@ class Agent():
 
 
 
-LEARNING_RATE = 0.02
-N_EPISODES = 5_000_000
-CHECK_IN = 10
-START_EPSILON = 1.0
-EPSILON_DECAY = START_EPSILON / (N_EPISODES / 2)
-FINAL_EPSILON = 0.1
-N_TESTS = 100_000
+def save(agent, filename=str(datetime.now())):
+    try:
+        os.mkdir("./agents/")
+    except:
+        pass
 
-agent = Agent(LEARNING_RATE, START_EPSILON, EPSILON_DECAY, FINAL_EPSILON)
+    # open file
+    qvals = open("./agents/" + filename + ".dat", "wb")
+    # terr = open("./agents/" + filename + ".res", "wb")
+    fo = open("./agents/" + filename + ".val", "wb")
+
+    # dump q values
+    qvals.write(zlib.compress(dill.dumps(agent.q_values)))
+    # terr.write(zlib.compress(dill.dumps(agent.training_error)))
+
+    # dump ai controls
+    dill.dump(agent.learning_rate, fo)
+    dill.dump(agent.epsilon, fo)
+    dill.dump(agent.epsilon_decay, fo)
+    dill.dump(agent.final_epsilon, fo)
+    dill.dump(agent.new_states, fo)
+    dill.dump(agent.total_states, fo)
+
+    qvals.close()
+    # terr.close()
+    fo.close()
+
+
+def load(filename):
+    # open file
+    qvals = open("./agents/" + filename + ".dat", "rb")
+    # terr = open("./agents/" + filename + ".res", "rb")
+    fo = open("./agents/" + filename + ".val", "rb")
+
+    # create new agent
+    agent = Agent()
+
+    # load qvals
+    agent.q_values = dill.loads(zlib.decompress(qvals.read()))
+    # agent.training_error = dill.loads(zlib.decompress(terr.read()))
+
+    # load ai variables
+    agent.learning_rate = dill.load(fo)
+    agent.epsilon = dill.load(fo)
+    agent.epsilon_decay = dill.load(fo)
+    agent.final_epsilon = dill.load(fo)
+    agent.new_states = dill.load(fo)
+    agent.total_states = dill.load(fo)
+
+    # close files
+    qvals.close()
+    # terr.close()
+    fo.close()
+
+    # return agent with values
+    return agent
+
+
+agent = Agent()
 win_count = []
 states = []
 checkpoint = int(N_EPISODES / CHECK_IN)
@@ -151,7 +242,7 @@ def train():
     tstates = 0
 
     for episode in range(N_EPISODES):
-        env = Environment(1)
+        env = Environment(NO_DECKS)
         obs = env.observe()
         terminated = False
 
@@ -184,7 +275,7 @@ def test():
     losses = 0
 
     for i in range(N_TESTS):
-        env = Environment(1)
+        env = Environment(NO_DECKS)
         obs = env.observe()
         terminated = False
 
@@ -221,7 +312,7 @@ def random_test():
 def test_verbose():
 
     while True:
-        env = Environment(1)
+        env = Environment(NO_DECKS)
         obs = env.observe()
         terminated = False
 
@@ -236,11 +327,36 @@ def test_verbose():
             obs = next_obs
 
 
+<<<<<<< HEAD
 
 train()
 agent.print_strategy_table()
 #agent_graphs.plot_error(agent)
 #agent_graphs.plot_wins(win_count, checkpoint)
 #agent_graphs.plot_new_states(states, checkpoint)
+=======
+start = time()
+
+train()
+
+print("Trained in " + str(time() - start) + ", Saving Model...")
+
+# agent.print_strategy_table()
+# agent_graphs.plot_error(agent)
+# agent_graphs.plot_wins(win_count, checkpoint)
+# agent_graphs.plot_new_states(states, checkpoint)
+
+start = time()
+
+save(agent, "agent")
+
+print("Saved in " + str(time() - start) + ", Now Loading...")
+
+start = time()
+
+load("agent")
+
+print("Loaded in " + str(time() - start))
+
 test()
 random_test()

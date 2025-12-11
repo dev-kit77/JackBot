@@ -1,6 +1,8 @@
 import random
-from actor import Actor
 from copy import copy
+
+from actor import Actor
+
 
 class Environment:
     def __init__(self, number_of_decks):
