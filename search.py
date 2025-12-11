@@ -3,6 +3,7 @@ import random
 from copy import deepcopy
 from environment import Environment
 
+#treenode that stores the gamestate and stats for ucb1
 class MCTSNode:
     def __init__(self, state, parent=None, action=None):
         self.state = state
@@ -13,7 +14,6 @@ class MCTSNode:
         self.value = 0.0
         self.untried_actions = ['hit', 'stand']
 
-    #extremely stolen algorithm (ucb1) to select next child
     def best_child(self, exploration_weight=1.41):
         if not self.children:
             return None
@@ -28,7 +28,6 @@ class MCTSNode:
 
         return self.children[choices_weights.index(max(choices_weights))]
 
-    #""
     def best_action(self):
         if not self.children:
             return 'stand'
@@ -50,7 +49,7 @@ class MCTS:
             node.value += reward
             node = node.parent
 
-    #simimulates with a lookahead on certain decision points, these ranges are a bit arbitrary rn and can be adjusted but
+    #simimulates with a lookahead on certain decision points, these ranges are a bit arbitrary and can be adjusted but
     #increasing the number of hands we do our lookahead 'futures' on can /also/ make things explode computationally
     def simulate_with_lookahead(self, env):
         if env.player.has_bust():
@@ -67,11 +66,9 @@ class MCTS:
 
             bust_prob = env.probability_of_busting()[2]
 
-            #stand
             if bust_prob > 0.7:
                 break
 
-            #hit
             if bust_prob < 0.3:
                 card = env.draw()
                 bust = env.player.add_card(card)
@@ -79,7 +76,6 @@ class MCTS:
                     return -1
                 continue
 
-            #use lookahead to decide if outside those ranges
             if self.should_hit_with_lookahead(env):
                 card = env.draw()
                 bust = env.player.add_card(card)
@@ -117,7 +113,7 @@ class MCTS:
 
     #policy for continuing the game during lookahead, we could alter this range to make the search more aggressive in terms
     #of when you 'should' always stand. 17 seems to be correct according to basic strategy cards but could be wrong for
-    #players that are counting cards. idk.
+    #players that are counting cards. 
     def continue_game(self, env):
         while env.player.sum < 17 and env.player.sum <= 21:
             card = env.draw()
@@ -206,7 +202,6 @@ def tester():
         env.dealer.sum = dealer_sum
         env.dealer.aces = dealer_aces
 
-        #can adjust number of runs the search makes here
         action = mcts.search(env, num_simulations=10000)
         bust_prob = env.probability_of_busting()[2]
 
