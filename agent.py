@@ -34,7 +34,7 @@ class Agent():
             return int(np.argmax(self.q_values[obs]))
     
     def update(self, obs, action, reward):
-        # difference in expected reward vs. observed reward
+        # difference in expected reward vs. observed reward (naive)
         error = reward - self.q_values[obs][action] 
         # update expected reward
         self.q_values[obs][action] = self.q_values[obs][action] + self.learning_rate * error 
@@ -104,6 +104,7 @@ CHECK_IN = 10
 START_EPSILON = 1.0
 EPSILON_DECAY = START_EPSILON / (N_EPISODES / 4)
 FINAL_EPSILON = 0.1
+N_TESTS = 100_000
 
 agent = Agent(LEARNING_RATE, START_EPSILON, EPSILON_DECAY, FINAL_EPSILON)
 win_count = []
@@ -112,11 +113,12 @@ checkpoint = int(N_EPISODES / CHECK_IN)
 
 def train():
     wins = 0
+    losses = 0
     nstates = 0
     tstates = 0
 
     for episode in range(N_EPISODES):
-        env = Environment(0, 0, 1)
+        env = Environment(0, 0, 8)
         obs = env.observe()
         terminated = False
 
@@ -138,17 +140,18 @@ def train():
 
             obs = next_obs
         
-        wins += 1 if env.player_has_won() or env.player_drew() else 0
+        wins += 1 if env.player_has_won() else 0
+        losses += 1 if env.player_has_lost() else 0
         
         agent.decay_epsilon()
 
 
 def test():
-    N_TESTS = 100_000
     wins = 0
+    losses = 0
 
     for i in range(N_TESTS):
-        env = Environment(0, 0, 1)
+        env = Environment(0, 0, 8)
         obs = env.observe()
         terminated = False
 
@@ -157,9 +160,30 @@ def test():
             next_obs, terminated = env.step(action)
             obs = next_obs
         
-        wins += 1 if env.player_has_won() or env.player_drew() else 0
+        wins += 1 if env.player_has_won() else 0
+        losses += 1 if env.player_has_lost() else 0
 
-    print("TEST: %i / %i = %f" %(wins, N_TESTS, wins / N_TESTS))
+    print("TEST: %i / %i = %f; %i / %i = %f" %(wins, N_TESTS, wins / N_TESTS, losses, N_TESTS, losses / N_TESTS))
+
+def random_test():
+    agent = Agent(0, 1, 0, 1)
+    wins = 0
+    losses = 0
+
+    for i in range(N_TESTS):
+        env = Environment(0, 0, 8)
+        obs = env.observe()
+        terminated = False
+
+        while not terminated:
+            action = agent.get_action(obs)
+            next_obs, terminated = env.step(action)
+            obs = next_obs
+        
+        wins += 1 if env.player_has_won() else 0
+        losses += 1 if env.player_has_lost() else 0
+
+    print("RANDOM TEST: %i / %i = %f; %i / %i = %f" %(wins, N_TESTS, wins / N_TESTS, losses, N_TESTS, losses / N_TESTS))
 
 def test_verbose():
 
@@ -180,7 +204,8 @@ def test_verbose():
 
 train()
 agent.print_strategy_table()
-agent_graphs.plot_error(agent)
-agent_graphs.plot_wins(win_count, checkpoint)
-agent_graphs.plot_new_states(states, checkpoint)
+#agent_graphs.plot_error(agent)
+#agent_graphs.plot_wins(win_count, checkpoint)
+#agent_graphs.plot_new_states(states, checkpoint)
 test()
+random_test()
