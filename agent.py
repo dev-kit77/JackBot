@@ -11,9 +11,7 @@ import dill
 import numpy as np
 
 import agent_graphs
-<<<<<<< HEAD
 from math import inf
-=======
 from environment import Environment
 >>>>>>> a96e96c (Added saving and loading agents to the agents file)
 
@@ -27,10 +25,6 @@ FINAL_EPSILON = 0.1
 N_TESTS = 100_000
 NO_DECKS = 8
 
-<<<<<<< HEAD
-class Agent():
-    def __init__(self, learning_rate, inital_epsilon, epsilon_decay, final_epsilon):
-=======
 
 class Agent:
     def __init__(
@@ -327,14 +321,6 @@ def test_verbose():
             obs = next_obs
 
 
-<<<<<<< HEAD
-
-train()
-agent.print_strategy_table()
-#agent_graphs.plot_error(agent)
-#agent_graphs.plot_wins(win_count, checkpoint)
-#agent_graphs.plot_new_states(states, checkpoint)
-=======
 start = time()
 
 train()
