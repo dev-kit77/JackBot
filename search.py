@@ -56,7 +56,6 @@ class MCTS:
             return -1
 
         while env.player.sum < 21:
-            #always hit when safe from bust
             if env.player.sum <= 11:
                 card = env.draw()
                 bust = env.player.add_card(card)
