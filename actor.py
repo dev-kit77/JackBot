@@ -26,3 +26,13 @@ class Actor:
     
     def print(self):
         print("Sum: %i; Aces: %i;" %(self.sum, self.aces))
+
+    def to_dict(self):
+        return {"sum": self.sum, "aces": self.aces}
+
+    @classmethod
+    def from_dict(cls, data: dict):
+        obj = cls()
+        obj.sum = int(data["sum"])
+        obj.aces = int(data["aces"])
+        return obj
