@@ -19,8 +19,10 @@ class Environment:
         self.player = Actor(self.draw(), self.draw())
 
     def create_deck(self):
+        # reset the deck on initialization and card exhaustion
         self.deck = [x * self.number_of_decks for x in (4, 4, 4, 4, 4, 4, 4, 4, 16, 4)]
-        self.score = 0  # the card counting "score" of the deck
+        # the card counting "score" of the deck
+        self.score = 0 
         self.below_five = 0
         self.below_eight = 0
         self.below_ace = 0
@@ -37,6 +39,7 @@ class Environment:
         return x + 2
 
     def count(self, x, count=1):
+        # update all card counting varibles
         if x > 7:
             self.score -= 1 * count
         elif x < 5:
@@ -94,6 +97,7 @@ class Environment:
         return self.player.add_card(self.draw())
 
     def hit_verbose(self):
+        # hits but prints stuff to the screen for humans to look at
         print("Player hits: %i -> " % self.player.sum, end="")
         result = self.player.add_card(self.draw())
         print(self.player.sum)
@@ -105,7 +109,7 @@ class Environment:
         return 1 if self.player.try_add_card(x) > 21 else -1
 
     def try_hit_count(self, count):
-        # try_hit's multiple times and prints success rate
+        # try_hit's multiple times and returns success rate
         busts = 0
         for i in range(count):
             x = self.try_hit()
@@ -127,6 +131,7 @@ class Environment:
             return -1  # loss
 
     def stand_verbose(self):
+        # stands and prints stuff to the screen
         print("Dealer draws: %i" % self.dealer.sum, end="")
         while (self.dealer.aces > 0 and self.dealer.sum == 17) or self.dealer.sum < 17:
             self.dealer.add_card(self.draw())
@@ -165,6 +170,7 @@ class Environment:
             return -1  # loss
 
     def try_stand_count(self, count):
+        # try stands multiple times and returns probabilities
         successes = 0
         for i in range(count):
             successes += 1 if self.try_stand() == 1 else 0
@@ -189,6 +195,7 @@ class Environment:
             return 1
 
     def step(self, action):
+        # performs a given action and returns the next observation
         terminated = False
         if action:
             if self.hit() == -1:
@@ -199,6 +206,7 @@ class Environment:
         return self.observe(), terminated
 
     def step_verbose(self, action):
+        # same as step but uses the verbose functions
         terminated = False
         if action:
             if self.hit_verbose() == -1:

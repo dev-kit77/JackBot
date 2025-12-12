@@ -13,7 +13,6 @@ import numpy as np
 import agent_graphs
 from math import inf
 from environment import Environment
->>>>>>> a96e96c (Added saving and loading agents to the agents file)
 
 # q learning
 LEARNING_RATE = 0.02
@@ -34,18 +33,19 @@ class Agent:
         epsilon_decay=EPSILON_DECAY,
         final_epsilon=FINAL_EPSILON,
     ):
-        self.q_values = defaultdict(lambda: np.zeros(2))
-        self.learning_rate = learning_rate
+        self.q_values = defaultdict(lambda: np.zeros(2)) # store of agents evaluation of each move given a state
+        self.learning_rate = learning_rate # scalar to error when adjusting expected rewards
 
-        self.epsilon = inital_epsilon
-        self.epsilon_decay = epsilon_decay
-        self.final_epsilon = final_epsilon
+        self.epsilon = inital_epsilon # starting probability of chosing a random move
+        self.epsilon_decay = epsilon_decay # subtracted from epsilon during training
+        self.final_epsilon = final_epsilon # minimum epsilon value
 
-        self.training_error = []
-        self.new_states = 0
-        self.total_states = 0
+        self.training_error = [] # list containing every error value calculated (big)
+        self.new_states = 0 # incremented every time get_action is called on a new state
+        self.total_states = 0 # incremented every time get_action is called
 
     def fill(self, clone):
+        # copy values from another agent
         self.q_values = clone.q_values
         self.learning_rate = clone.learning_rate
 
@@ -58,12 +58,11 @@ class Agent:
         self.total_states = clone.total_states
 
     def get_action(self, obs):
-        # hitting epsilon = random action to explore
-        # missing epsilon = choose best action
-        # epsilon decays over time (less exploration)
         self.total_states += 1
-        if (np.array_equal(self.q_values[obs], np.zeros(2))): # new state
+        if (np.array_equal(self.q_values[obs], np.zeros(2))): # havent encountered this state before
             self.new_states += 1
+        # generate a random number and compare it to epsilon
+        # to determine exploration / exploitation
         if random.random() < self.epsilon:
             return round(random.random())
         else:
@@ -89,9 +88,11 @@ class Agent:
         return self.q_values[obs]
 
     def print_strategy_table(self):
-        ## iterate through all states
-        ## find the best action
+        # calculates the average reward for each action for a given state
+        # works no matter how many card counting variables are in the state
+        # tbh i (finn rose) am super proud of this function
 
+        # state clamps is a list of the minimum and maximum values for all of the parameters in the state
         state_clamps = [[inf, -inf] for i in range(len(list(self.q_values.keys())[0]))]
         for state in self.q_values:
             for i in range(len(state)):
@@ -100,26 +101,35 @@ class Agent:
 
         ACTIONS = "SH"
 
+        # prints headers
         print("\n\n")
         print("Hard totals:\n  ", end="")
-        [print(" %2i " %x, end="") for x in range(2, 12)]
+        [print(" %2i " %x, end="") for x in range(state_clamps[2][0], state_clamps[2][1] + 1)]
         print("")
+
+        # iterates through all hard totals found in the q values
         for player in range(state_clamps[0][1], state_clamps[0][0] - 1, -1):
             print("%2i" %player, end=" ")
+            # iterates through all the dealer face up cards found in the q values
             for dealer in range(state_clamps[2][0], state_clamps[2][1] + 1):
+                # sum evaluations returns the sum of all the evaluations for each action + the number of times each action had a proper evaluation for averaging
                 e = self.sum_evaulations([player, 0, dealer], state_clamps)
                 standavg = 0 if e[2] == 0 else (e[0] / e[2])
                 hitavg = 0 if e[3] == 0 else (e[1] / e[3])
+                # prints S if the stand average is higher than the hit average otherwise H
                 print(" %s " %(ACTIONS[0 if standavg >= hitavg else 1]), end=" ")
             print("")
         
+        # prints headers
         print("")
         print("Soft totals:\n    ", end="")
-        [print(" %2i " %x, end="") for x in range(2, 12)]
+        [print(" %2i " %x, end="") for x in range(state_clamps[2][0], state_clamps[2][1] + 1)]
         print("")
+
+        # same as above but with an active ace
         for player in range(10, 0, -1):
             print("%2i,A" %player, end=" ")
-            for dealer in range(2, 12):
+            for dealer in range(state_clamps[2][0], state_clamps[2][1] + 1):
                 e = self.sum_evaulations([player + 11, 1, dealer], state_clamps)
                 standavg = 0 if e[2] == 0 else (e[0] / e[2])
                 hitavg = 0 if e[3] == 0 else (e[1] / e[3])
@@ -129,8 +139,8 @@ class Agent:
     def reward_function(self, obs, next_obs):
         if next_obs[0] > 21:
             # agent busted (bad)
-            #attempts to make the agent a little less scared of busting
             reward = 0
+            #attempts to make the agent a little less scared of busting
             #reward = obs[0] - (next_obs[0] - 21) * 2 # bad
             #reward = 21 - (next_obs[0] - 21) * 2 # badder
             #reward = next_obs[0] / 2 # worse
@@ -147,16 +157,26 @@ class Agent:
         return reward
 
     def sum_evaulations(self, state, state_clamps, index=3):
+        # sums the evaluations for all the states no matter how many card counting parameters there are 
         hit = 0
         hitcount = 0
         stand = 0
         standcount = 0
+
+        # check if there is no card counting parameters and just return the current state evaluation
+        if index >= len(state_clamps):
+            e = self.q_values[tuple(state)]
+            return (float(e[0]), float(e[1]), 1 if e[0] != 0 else 0, 1 if e[1] != 0 else 0)
+        
+        # for every value in the range of the current state parameter
         for i in range(state_clamps[index][0], state_clamps[index][1] + 1):
             if index == len(state_clamps) - 1:
+                # a complete state is constructed so look up q values
                 e = self.q_values[tuple(state + [i])]
                 standcount += 1 if e[0] != 0 else 0
                 hitcount += 1 if e[1] != 0 else 0
             else:
+                # there is still deeper state parameters so add the current value to the state and go deeper
                 e = self.sum_evaulations(state + [i], state_clamps, index + 1)
                 standcount += e[2]
                 hitcount += e[3]
@@ -325,12 +345,14 @@ start = time()
 
 train()
 
-print("Trained in " + str(time() - start) + ", Saving Model...")
+print("Trained in " + str(time() - start), end="")
 
-# agent.print_strategy_table()
-# agent_graphs.plot_error(agent)
-# agent_graphs.plot_wins(win_count, checkpoint)
-# agent_graphs.plot_new_states(states, checkpoint)
+agent.print_strategy_table()
+agent_graphs.plot_error(agent)
+agent_graphs.plot_wins(win_count, checkpoint)
+agent_graphs.plot_new_states(states, checkpoint)
+
+print(", Saving Model...")
 
 start = time()
 

@@ -1,3 +1,6 @@
+# abstraction of the player and dealer
+# just a guy who has cards
+
 class Actor:
     def __init__(self, *args):
         self.sum = 0
@@ -5,6 +8,7 @@ class Actor:
         [self.add_card(x) for x in args]
     
     def add_card(self, card):
+        # add a card to the actor's hand
         self.aces += 1 if card == 11 else 0
         self.sum += card
         while (self.sum > 21 and self.aces > 0):

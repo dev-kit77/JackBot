@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 def plot_error(agent):
+    # plots the average training error over episodes
     NUM = 50
     x = np.linspace(0, len(agent.training_error), NUM)
     check = int(len(agent.training_error) / NUM)
@@ -15,6 +16,7 @@ def plot_error(agent):
     plt.show()
 
 def plot_wins(win_count, checkpoint):
+    # plots win rate over episodes
     y = [i / checkpoint for i in win_count]
     x = [i * checkpoint for i in range(0, len(win_count))]
     fig, ax = plt.subplots()
@@ -24,6 +26,7 @@ def plot_wins(win_count, checkpoint):
     plt.show()
 
 def plot_new_states(state_list, checkpoint):
+    # plots proportion of new states visited over episodes
     y = [(i[0] / i[1]) * 100 for i in state_list]
     x = [i * checkpoint for i in range(0, len(state_list))]
     fig, ax = plt.subplots()
